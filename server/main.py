@@ -2,6 +2,10 @@ from utils import *
 from const import *
 import socket
 import threading
+import sys
+# Add the parent wire_protocol directory to the path so that its methods can be imported
+sys.path.append('..')
+from wire_protocol.protocol import *
 
 
 """
@@ -44,13 +48,19 @@ def listen_for_connections(sock: socket.socket):
         print("Server is listening and accepting connections...")
         client_socket, client_address = sock.accept()
         print(f'New connection from {client_address}')
-        client_socket.send('What is your username?\n'.encode('utf-8'))
+        client_socket.send(
+            encode(Actions.CREATE, Mode.SERVER)
+        )
         username = client_socket.recv(MAX_SOCKET_BUFFER_SIZE)
-        users_connections[username] = client_socket
-        print(f'The username of this client is {username}'.encode('utf-8'))
-        client_socket.send('You are now connected!'.encode('utf-8'))
-        thread = threading.Thread(target=handle_client, args=(username,))
-        thread.start()
+        print(username)
+        # if (not user_exists(username)):
+        #     create_user(username)
+        #     client_socket.send('New user created!'.encode('utf-8'))
+        # users_connections[username] = client_socket
+        # print(f'<{username}> is connected'.encode('utf-8'))
+        # client_socket.send('You are now connected!'.encode('utf-8'))
+        # thread = threading.Thread(target=handle_client, args=(username,))
+        # thread.start()
 
 
 init()

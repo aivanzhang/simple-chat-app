@@ -3,8 +3,8 @@ import socket
 import threading
 from const import *
 # Add the parent wire_protocol directory to the path so that its methods can be imported
-# sys.path.append('..')
-# from wire_protocol.protocol import encode, decode
+sys.path.append('..')
+from wire_protocol.protocol import *
 
 username = input('Choose an username >>> ')
 
@@ -28,8 +28,9 @@ def init(host: str = "127.0.0.1", port: int = 3000) -> None:
 def client_receive(client_socket):
     while True:
         try:
-            message = client_socket.recv(1024).decode('utf-8')
-            if message == "What is your username?\n":
+            message = client_socket.recv(
+                MAX_CLIENT_BUFFER_SIZE).decode('utf-8')
+            if decode(message).TYPE == Actions.CREATE:
                 client_socket.send(username.encode('utf-8'))
             else:
                 print(message)
