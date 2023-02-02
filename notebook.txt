@@ -1,0 +1,13 @@
+Engineering Notebook
+
+Part 1:
+Keep a notebook for what decisions you made, and why you made them the way you did, and any interesting observations that come up along the way.
+
+Part 2:
+Add to your notebook comparisons over the complexity of the code, any performance differences, and the size of the buffers being sent back and forth between the client and the server.
+
+Jason:
+Part 1
+- UI is command line and written in python
+- When client opens connection to server, it asks for username. If unique, create the account. If not, deliver any pending messages
+- User actions: list, send, delete, quit
