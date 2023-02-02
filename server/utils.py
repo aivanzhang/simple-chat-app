@@ -8,16 +8,6 @@ if the user "bob" has pending messages "hello" and "goodbye", then `users` will 
 """
 users = dict()
 
-"""
-`users_connections` is a global dictionary that stores the user connections data. 
-The key is the username of the user and the value is the user's socket identifier. 
-So for example, if the user "bob" has socket identifier "10", then `users_connections` will be:
-{
-    "bob": 10
-}
-"""
-users_connections = dict()
-
 
 def init_db(database_name: str = "users") -> None:
     """
@@ -124,30 +114,4 @@ def delete_user(username: str) -> None:
     """
     if (user_exists(username)):
         del users[username]
-        del users_connections[username]
     return
-
-
-def update_connection(username: str, connection_id: int) -> None:
-    """
-    Adds a user's socket id to the database.
-    @Parameter:
-    1. username: str = username of the user.
-    2. connection_id: int = connection id of the user.
-    @Returns: None.
-    """
-    if (user_exists(username)):
-        users_connections[username] = connection_id
-    return
-
-
-def get_connection(username: str) -> int:
-    """
-    Returns the socket id of a user.
-    @Parameter:
-    1. username: str = username of the user.
-    @Returns: socket id of the user else -1 if it doesn't exist.
-    """
-    if (user_exists(username)):
-        return users_connections[username]
-    return -1
