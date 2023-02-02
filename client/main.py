@@ -39,7 +39,7 @@ def client_receive(client_socket):
             client_socket.close()
             break
 
-
+# JY: I will add to this thread to make it client's main loop, which covers send and all the other available actions
 def client_send(client_socket):
     while True:
         message = f'{username}: {input("")}'
