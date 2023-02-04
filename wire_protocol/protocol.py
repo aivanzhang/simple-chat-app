@@ -38,6 +38,3 @@ def decode(data):
     @Returns: The decoded data in an array D where D[0] = count, D[1] = action, D[2] = content.
     """
     return data.split(SEPARATOR)
-
-
-print(encode(Action.CREATE, "Hello World"))
