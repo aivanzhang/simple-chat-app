@@ -1,13 +1,12 @@
 import sys
 import socket
 import threading
-from const import *
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
 from wire_protocol.protocol import *
 
 # Checks if server returned a message confirming the connection
-got_connection_confirmation = False
+got_connection_confirmation = True
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
 # Client socket that connects to the server
@@ -73,7 +72,7 @@ def client_receive(client_socket):
     while run_event.is_set():
         try:
             message = client_socket.recv(
-                MAX_CLIENT_BUFFER_SIZE
+                1024
             ).decode('utf-8')
         except ConnectionResetError:
             gracefully_shutdown()
@@ -93,8 +92,8 @@ def client_send(client_socket):
     while run_event.is_set():
         if (not got_connection_confirmation):
             continue
-        message = input("Send a message: ")
-        client_socket.send(message.encode('utf-8'))
+        message = package("join", ["test", "test"], client_socket)
+        print(message)
 
 
 if __name__ == '__main__':

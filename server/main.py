@@ -1,12 +1,10 @@
-from utils import *
-from const import *
+from db_utils import *
 import socket
 import threading
 import sys
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
 from wire_protocol.protocol import *
-
 
 """
 `users_connections` is a global dictionary that stores the user connections data.
@@ -65,12 +63,11 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
 
 def handle_client(client_socket):
     while run_event.is_set():
-        # print("Handling client...")
-        message = client_socket.recv(1024)
+        message = receive_unpkg_data(client_socket)
+        print(message)
         if (not message):
             # TODO handle client disconnect
             return
-            # print(message)
 
 
 def listen_for_connections(sock: socket.socket):
