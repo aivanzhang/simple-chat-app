@@ -48,11 +48,10 @@ def listen_for_connections(sock: socket.socket):
         print("Server is listening and accepting connections...")
         client_socket, client_address = sock.accept()
         print(f'New connection from {client_address}')
-        client_socket.send(
-            encode(Actions.CREATE, Mode.SERVER)
-        )
-        username = client_socket.recv(MAX_SOCKET_BUFFER_SIZE)
-        print(username)
+        # client_socket.send(
+        #     encode(Actions.CREATE, Mode.SERVER)
+        # )
+        # username = client_socket.recv(MAX_SOCKET_BUFFER_SIZE)
         # if (not user_exists(username)):
         #     create_user(username)
         #     client_socket.send('New user created!'.encode('utf-8'))

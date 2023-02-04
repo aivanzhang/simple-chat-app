@@ -1,12 +1,10 @@
+from wire_protocol.protocol import *
 import sys
 import socket
 import threading
 from const import *
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
-from wire_protocol.protocol import *
-
-username = input('Choose an username >>> ')
 
 
 def init(host: str = "127.0.0.1", port: int = 3000) -> None:

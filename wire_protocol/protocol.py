@@ -1,49 +1,43 @@
 from enum import Enum
-import pickle
 
 
-class Actions(Enum):
+class Action(str, Enum):
     """
     Actions that can be performed by the client and server.
     """
-    CREATE = 0,
-    LIST = 1,
-    SEND = 2,
-    DELETE = 3,
+    CREATE = "create",
+    LIST = "list",
+    SEND = "send",
+    DELETE = "delete",
 
 
-class Mode(Enum):
+SEPARATOR = "⣜⮾⼴"
+
+COUNT_IDENTIFIER = "ⓘ…Ⲉ"
+
+
+def encode(action: Action, content=""):
     """
-    Mode that the encode and decode function should run in.
+    Encodes the data to be sent between the server and the client.
+    @Parameter:
+    1. action: The action to be performed.
+    2. content: The content to be sent.
+    @Returns: The encoded data in the following format:
+    ⓘ…Ⲉ<length of data including separators>⣜⮾⼴<action>⣜⮾⼴<content>
     """
-    CLIENT = 0,
-    SERVER = 1,
-
-
-class CreatePayload():
-    TYPE = Actions.CREATE
-    QUESTION = "What is your username? ".encode('utf-8')
-    username = None
-
-    def __init__(self, username=None):
-        self.username = username
-
-    def getUsername(self):
-        return self.username
-
-
-def encode(action: Actions, mode: Mode, payload={}):
-    payload = None
-    if (mode == Mode.CLIENT):
-        if (action == Actions.CREATE):
-            payload = CreatePayload(payload.username.encode('utf-8'))
-
-    if (mode == Mode.SERVER):
-        if (action == Actions.CREATE):
-            payload = CreatePayload()
-
-    return pickle.dumps(payload)
+    payload = f"{SEPARATOR}{action}{SEPARATOR}{content}"
+    payload_len = len(payload) + len(COUNT_IDENTIFIER)
+    return f"{COUNT_IDENTIFIER}{payload_len + len(str(payload_len))}{payload}"
 
 
 def decode(data):
-    return pickle.loads(data)
+    """
+    Decodes the data sent between the server and the client.
+    @Parameter:
+    1. data: The data to be decoded.
+    @Returns: The decoded data in an array D where D[0] = count, D[1] = action, D[2] = content.
+    """
+    return data.split(SEPARATOR)
+
+
+print(encode(Action.CREATE, "Hello World"))
