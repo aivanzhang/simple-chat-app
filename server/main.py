@@ -1,7 +1,8 @@
-from db_utils import *
 import socket
 import threading
 import sys
+from payload import *
+from db_utils import save_db_to_disk
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
 from wire_protocol.protocol import *
@@ -19,10 +20,6 @@ if the user "bob" has socket `socket1` running on thread `thread1`, then
 users_connections = {}
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
-# List of running threads
-running_threads = []
-# List of running sockets
-running_sockets = []
 
 
 def gracefully_shutdown():
@@ -31,17 +28,41 @@ def gracefully_shutdown():
     @Parameter: None.
     @Returns: None.
     """
+    print("saving data to disk.")
+    save_db_to_disk()
     print("attempting to close sockets and threads.")
     run_event.clear()
     try:
-        for client_socket in running_sockets:
+        for (client_socket, thread) in list(users_connections.values()):
             client_socket.shutdown(socket.SHUT_RDWR)
+            thread.join()
+    except (OSError):
+        # This occurs when the socket is already closed.
+        pass
+    global sock
+    sock.close()
+    print("threads and sockets successfully closed.")
+    sys.exit(0)
+
+
+def gracefully_quit(username):
+    """
+    Gracefully removes a specific user from the server.
+    @Parameter: None.
+    @Returns: None.
+    """
+    if (not username):
+        return
+    print(f"attempting to close socket and thread for {username}.")
+    user_socket, _ = users_connections[username]
+    try:
+        if (user_socket):
+            user_socket.shutdown(socket.SHUT_RDWR)
     except OSError:
         # This occurs when the socket is already closed.
         pass
-    for thread in running_threads:
-        thread.join()
-    print("threads and sockets successfully closed.")
+    del users_connections[username]
+    print(f"threads and sockets successfully closed for {username}.")
     sys.exit(0)
 
 
@@ -53,6 +74,7 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
     init_db()
     init_users()
+    global sock
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((host, port))
     sock.listen()
@@ -62,12 +84,29 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
 
 
 def handle_client(client_socket):
+    username = None
     while run_event.is_set():
         message = receive_unpkg_data(client_socket)
-        print(message)
         if (not message):
-            # TODO handle client disconnect
+            gracefully_quit(username)
             return
+        if (message[1] == Action.JOIN):
+            username = message[2]
+            users_connections[username] = (
+                client_socket, threading.current_thread()
+            )
+        elif (message[1] == Action.QUIT):
+            gracefully_quit(username)
+            return
+        response = (None, None)
+        if (message[1] == Action.SEND):
+            response = handle_send(message, username, users_connections)
+        else:
+            response = handle_payload(message)
+            if (response[1]):
+                package(Action.RETURN, [response[1]], client_socket)
+            if (message[1] == Action.JOIN):
+                send_pending_msgs(client_socket, username)
 
 
 def listen_for_connections(sock: socket.socket):
@@ -82,13 +121,11 @@ def listen_for_connections(sock: socket.socket):
         while True:
             client_socket, client_address = sock.accept()
             print(f'New connection from {client_address}')
-            running_sockets.append(client_socket)
-            client_socket.send('You are now connected!'.encode('utf-8'))
             thread = threading.Thread(
                 target=handle_client, args=(client_socket,))
             thread.start()
-            running_threads.append(thread)
-    except KeyboardInterrupt:
+    # This includes KeyboardInterrupt (i.e. Control + C) and other errors
+    except:
         gracefully_shutdown()
 
 

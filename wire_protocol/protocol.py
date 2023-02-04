@@ -30,6 +30,17 @@ class Action(str, Enum):
     1. username: str
     """
     DELETE = "delete",
+    """
+    Return value from client socket call
+    content:
+    1. return_value: str
+    """
+    RETURN = "return",
+    """
+    User exits to server
+    content: None
+    """
+    QUIT = "quit",
 
 
 SEPARATOR = "~$#"

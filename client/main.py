@@ -5,8 +5,6 @@ import threading
 sys.path.append('..')
 from wire_protocol.protocol import *
 
-# Checks if server returned a message confirming the connection
-got_connection_confirmation = True
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
 # Client socket that connects to the server
@@ -71,14 +69,13 @@ def client_receive(client_socket):
     """
     while run_event.is_set():
         try:
-            message = client_socket.recv(
-                1024
-            ).decode('utf-8')
+            message = receive_unpkg_data(client_socket)
+            if (message and len(message) > 2):
+                print(message[-1])
         except ConnectionResetError:
             gracefully_shutdown()
         if (not message):
             run_event.clear()
-        print(message)
 
 
 def client_send(client_socket):
@@ -89,11 +86,11 @@ def client_send(client_socket):
     @Returns: None.
     """
     # JY: I will add to this thread to make it client's main loop, which covers send and all the other available actions
+    username = input("Enter username (will be created if it doesn't exist): ")
+    package("join", [username], client_socket)
     while run_event.is_set():
-        if (not got_connection_confirmation):
-            continue
-        message = package("join", ["test", "test"], client_socket)
-        print(message)
+        # message = package("send", ["ivan", "hi"], client_socket)
+        return
 
 
 if __name__ == '__main__':
