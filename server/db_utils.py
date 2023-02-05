@@ -1,3 +1,4 @@
+import csv 
 """
 `users` is a global dictionary that stores the user data. The key is the username of the user
 and the value is an array of the user's pending messages as strings. So for example,
@@ -23,10 +24,9 @@ def init_db(database_name: str = default_db_name) -> None:
 
 def save_db_to_disk(database_name: str = default_db_name) -> None:
     with open("{}.csv".format(database_name), "w+") as f:
-        data = ""
+        db_writer = csv.writer(f)
         for username, messages in list(users.items()):
-            data += f"{','.join([username] + messages)}\n"
-        f.write(data)
+            db_writer.writerow([username] + messages)
 
 
 def init_users(database_name: str = default_db_name) -> None:
@@ -37,8 +37,10 @@ def init_users(database_name: str = default_db_name) -> None:
     @Raises: FileNotFoundError if `users.csv` does not exist.
     """
     with open(f"{database_name}.csv", "r+") as f:
-        for line in f:
-            line = line.strip().split(",")
+        db_reader = csv.reader(
+            f, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True
+        )
+        for line in db_reader:
             users[line[0]] = line[1:]
     return
 

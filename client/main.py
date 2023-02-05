@@ -89,7 +89,7 @@ def client_send(client_socket):
     username = input("Enter username (will be created if it doesn't exist): ")
     package("join", [username], client_socket)
     while run_event.is_set():
-        # message = package("send", ["ivan", "hi"], client_socket)
+        # message = package("send", ["ivan", "hi, my, name, is, Ivan"], client_socket)
         return
 
 
