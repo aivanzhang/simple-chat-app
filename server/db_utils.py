@@ -23,6 +23,13 @@ def init_db(database_name: str = default_db_name) -> None:
 
 
 def save_db_to_disk(database_name: str = default_db_name) -> None:
+    """
+    Saves the `users` dictionary to the database file `database_name`.csv.
+    @Parameter:
+    1. database_name: str = file name for the database.
+    @Returns: None.
+    """
+    print(users)
     with open("{}.csv".format(database_name), "w+") as f:
         db_writer = csv.writer(f)
         for username, messages in list(users.items()):
