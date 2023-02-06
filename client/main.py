@@ -7,6 +7,9 @@ from wire_protocol.protocol import *
 
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
+# Event to block client UI until server response
+respond_event = threading.Event()
+
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -17,8 +20,10 @@ def gracefully_shutdown():
     @Parameter: None.
     @Returns: None.
     """
-    print("attempting to close socket and threads.")
+    # print("attempting to close socket and threads.")
+    print("Shutting down.") # UI message
     run_event.clear()
+    respond_event.set()
     try:
         client_socket.shutdown(socket.SHUT_RDWR)
     except OSError:
@@ -27,7 +32,7 @@ def gracefully_shutdown():
     global receive_thread, send_thread
     receive_thread.join()
     send_thread.join()
-    print("threads and socket successfully closed.")
+    # print("threads and socket successfully closed.")
     sys.exit(0)
 
 
@@ -43,12 +48,13 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     print(f"Starting connection to {host}:{port}")
     client_socket.connect((host, port))
     run_event.set()
+    respond_event.clear()
     global receive_thread, send_thread
     receive_thread = threading.Thread(
         target=client_receive, args=(client_socket,)
     )
     send_thread = threading.Thread(
-        target=client_send, args=(client_socket,)
+        target=client_main_loop, args=(client_socket,)
     )
     receive_thread.start()
     send_thread.start()
@@ -71,26 +77,76 @@ def client_receive(client_socket):
         try:
             message = receive_unpkg_data(client_socket)
             if (message and len(message) > 2):
-                print(message[-1])
+                print(message[-1], flush = True) # TODO: ordering of the messages is not yet enforced
+            if (not respond_event.is_set()):
+                respond_event.set()
         except ConnectionResetError:
             gracefully_shutdown()
         if (not message):
             run_event.clear()
 
 
-def client_send(client_socket):
+def client_main_loop(client_socket):
     """
-    Sends messages to the server given user input.
+    Client UI main loop
     @Parameter:
     1. client_socket: The client socket to send messages to.
     @Returns: None.
     """
-    # JY: I will add to this thread to make it client's main loop, which covers send and all the other available actions
-    username = input("Enter username (will be created if it doesn't exist): ")
+    print("Enter username (will be created if it doesn't exist): ", flush = True)
+    while True:
+        username = input()
+        if (not username):
+            continue
+        break
+    
     package("join", [username], client_socket)
+    
+    # block until server acks join
+    respond_event.wait()
+
     while run_event.is_set():
-        # message = package("send", ["ivan", "hi, my, name, is, Ivan"], client_socket)
-        return
+        respond_event.clear() # TODO: a message from another user is not differentiated from the server's response to client's action
+
+        print("Actions: list, send <user> <message>, delete <user>, quit:")
+        action = input()
+
+        action_list = action.split()
+
+        if (len(action_list) == 0):
+            continue
+
+        if (action_list[0] == "list"):
+            package(Action.LIST, [""], client_socket)
+        
+        elif (action_list[0] == "send"):
+            if (len(action_list) < 2): # TODO: are we allowing spaces in username??
+                print("Must specify user to send to. Try again.", flush = True)
+                continue
+            if (len(action_list) < 3):
+                print("Must specify message to send. Try again.", flush = True)
+                continue
+            package(Action.SEND, action_list[1:], client_socket)
+        
+        elif (action_list[0] == "delete"):
+            if (len(action_list) < 2): # TODO: are we allowing spaces in username??
+                print("Must specify user to delete. Try again.", flush = True)
+                continue
+            if (username == action_list[1]):
+                print("Cannot delete self user.", flush = True)
+                continue
+            package(Action.DELETE, action_list[1:], client_socket)
+        
+        elif (action_list[0] == "quit"):
+            run_event.clear()
+        
+        else:
+            print("Unrecognized action.", flush = True)
+            continue
+
+        respond_event.wait() 
+
+    return
 
 
 if __name__ == '__main__':
