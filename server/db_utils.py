@@ -29,7 +29,6 @@ def save_db_to_disk(database_name: str = default_db_name) -> None:
     1. database_name: str = file name for the database.
     @Returns: None.
     """
-    print(users)
     with open("{}.csv".format(database_name), "w+") as f:
         db_writer = csv.writer(f)
         for username, messages in list(users.items()):
