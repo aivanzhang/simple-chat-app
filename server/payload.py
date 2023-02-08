@@ -54,9 +54,15 @@ def handle_send(payload, sender, online_users):
     receiver = payload[0]
     message = payload[1]
     message = f"{sender} says: {message}"
-    if (receiver in online_users):
-        package(Action.SEND, [message], online_users[receiver][0])
-        return (True, "Message sent successfully.")
+    if (user_exists(receiver)):
+        if (receiver in online_users):
+            package(Action.SEND, [message], online_users[receiver][0])
+            package(Action.SEND, ["Message sent successfully."], online_users[sender][0]) # confirm to sender
+            return (True, "Message sent successfully.")
+        else:
+            add_pending_message(receiver, message)
+            package(Action.SEND, ["Message has been queued."], online_users[sender][0]) # confirm to sender
+            return (False, "Message has been queued.")
     else:
-        add_pending_message(receiver, message)
-        return (False, "Message has been queued.")
+        package(Action.SEND, ["The receipient does not exist."], online_users[sender][0]) # confirm to sender
+        return (False, "The receipient does not exist.")
