@@ -38,22 +38,15 @@ def gracefully_shutdown():
     # print("threads and socket successfully closed.")
     sys.exit(0)
 
-def make_route_note(action, parameter):
-    return main_pb2.UserRequest(
-        action=action,
-        parameter=parameter
-    )
-
-def generate_messages():
+def generate_messages(command, username, message="HI"):
     messages = [
-        make_route_note("list", ""),
-        make_route_note("list", ""),
-        make_route_note("list", ""),
-        make_route_note("list", ""),
-        make_route_note("list", ""),
+        main_pb2.UserRequest(
+            action=command,
+            username=username,
+            message=message
+        ),
     ]
     for msg in messages:
-        print("Sending %s at %s" % (msg.action, msg.parameter))
         yield msg
 
 
@@ -70,10 +63,19 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     if(use_grpc):
         with grpc.insecure_channel(f"{host}:{port}") as channel:
             stub = main_pb2_grpc.ChatterStub(channel)
-            responses = stub.Chat(generate_messages())
-            for response in responses:
-                print("Received message %s" %
-                    (response.message))
+            try:
+                while True:
+                    command = input("Command: ")
+                    if command == "quit":
+                        return
+                    else:
+                        responses = stub.Chat(generate_messages(command, "ivan"))
+                        for response in responses:
+                            print("Received message %s" %
+                                (response.message))
+            except KeyboardInterrupt:
+                return
+                
     else:
         client_socket.connect((host, port))
         run_event.set()

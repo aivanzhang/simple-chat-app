@@ -66,3 +66,11 @@ def handle_send(payload, sender, online_users):
     else:
         package(Action.SEND, ["The receipient does not exist."], online_users[sender][0]) # confirm to sender
         return (False, "The receipient does not exist.")
+    
+def handle_send_grpc(sender, receiver, message):
+    message = f"{sender} says: {message}"
+    if(user_exists(receiver)):
+        add_pending_message(receiver, message)
+        return "Message sent successfully."
+    else:
+        return "The receipient does not exist."

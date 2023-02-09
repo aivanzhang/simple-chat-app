@@ -8,7 +8,8 @@ service Chatter {
 // The request message containing the user's name.
 message UserRequest {
   string action = 1;
-  string parameter = 2;
+  string username = 2;
+  string message = 3;
 }
 
 // The response message containing the greetings

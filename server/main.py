@@ -27,6 +27,29 @@ users_connections = {}
 run_event = threading.Event()
 use_grpc = True
 
+class Chatter(main_pb2_grpc.ChatterServicer):
+    def __init__(self):
+        self.username = None
+
+    """Provides methods that implement functionality of route guide server."""
+    def Chat(self, request_iterator, context):
+        for request in request_iterator:
+            action = request.action
+            if(action == Action.LIST):
+                payload = [None, action]
+                yield main_pb2.UserReply(message = handle_payload(payload)[1])
+            elif(action == Action.JOIN or action == Action.DELETE):
+                payload = [None, action, request.username]
+                yield main_pb2.UserReply(message = handle_payload(payload)[1])
+            if(action == Action.JOIN):
+                self.username = request.username
+                yield main_pb2.UserReply(message = "\n".join(return_pending_messages(request.username)))
+            if(action == Action.SEND):
+                message = handle_send_grpc(self.username, request.username, request.message)
+                yield main_pb2.UserReply(message = message)
+                
+
+
 def gracefully_shutdown():
     """
     Gracefully shuts down the server.
@@ -70,17 +93,6 @@ def gracefully_quit(username):
     print(f"threads and sockets successfully closed for {username}.")
     sys.exit(0)
 
-class ChatterServicer(main_pb2_grpc.ChatterServicer):
-    """Provides methods that implement functionality of route guide server."""
-    def Chat(self, request_iterator, context):
-        prev_notes = []
-        for new_note in request_iterator:
-            for prev_note in prev_notes:
-                if prev_note.action == new_note.action:
-                    yield prev_note
-            prev_notes.append(new_note)
-
-
 def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
     Initializes the server.
@@ -92,7 +104,7 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     if (use_grpc):
         try:
             server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-            main_pb2_grpc.add_ChatterServicer_to_server(ChatterServicer(), server)
+            main_pb2_grpc.add_ChatterServicer_to_server(Chatter(), server)
             server.add_insecure_port(f"{host}:{port}")
             server.start()
             print(f"Now listening on {host}:{port}")

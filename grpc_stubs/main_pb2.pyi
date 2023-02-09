@@ -11,9 +11,11 @@ class UserReply(_message.Message):
     def __init__(self, message: _Optional[str] = ...) -> None: ...
 
 class UserRequest(_message.Message):
-    __slots__ = ["action", "parameter"]
+    __slots__ = ["action", "message", "username"]
     ACTION_FIELD_NUMBER: _ClassVar[int]
-    PARAMETER_FIELD_NUMBER: _ClassVar[int]
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    USERNAME_FIELD_NUMBER: _ClassVar[int]
     action: str
-    parameter: str
-    def __init__(self, action: _Optional[str] = ..., parameter: _Optional[str] = ...) -> None: ...
+    message: str
+    username: str
+    def __init__(self, action: _Optional[str] = ..., username: _Optional[str] = ..., message: _Optional[str] = ...) -> None: ...
