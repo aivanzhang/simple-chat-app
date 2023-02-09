@@ -92,6 +92,11 @@ def handle_client(client_socket):
             return
         if (message[1] == Action.JOIN):
             username = message[2]
+            if (username in users_connections.keys()): # already logged in, refuse client
+                package(Action.RETURN, ["Already logged in elsewhere."], client_socket)
+                client_socket.shutdown(socket.SHUT_RDWR)
+                return
+
             users_connections[username] = (
                 client_socket, threading.current_thread()
             )
@@ -101,6 +106,8 @@ def handle_client(client_socket):
         response = (None, None)
         if (message[1] == Action.SEND):
             response = handle_send(message, username, users_connections)
+        elif (message[1] == Action.DELETE and message[2] in users_connections.keys()):
+            package(Action.RETURN, ["Cannot delete logged in user."], client_socket)
         else:
             response = handle_payload(message)
             if (response[1]):

@@ -15,7 +15,6 @@ def handle_payload(payload: "list[str]"):
     """
     payload = payload[1:]  # ignore the first count parameter
     if (payload[0] == Action.JOIN):
-        # TODO handle returning pending messages
         success = create_user(payload[1])
         return (success, "User created successfully. Welcome!" if success else "Welcome back!")
     elif (payload[0] == Action.LIST):
@@ -57,12 +56,12 @@ def handle_send(payload, sender, online_users):
     if (user_exists(receiver)):
         if (receiver in online_users):
             package(Action.SEND, [message], online_users[receiver][0])
-            package(Action.SEND, ["Message sent successfully."], online_users[sender][0]) # confirm to sender
+            package(Action.RETURN, ["Message sent successfully."], online_users[sender][0]) # confirm to sender
             return (True, "Message sent successfully.")
         else:
             add_pending_message(receiver, message)
-            package(Action.SEND, ["Message has been queued."], online_users[sender][0]) # confirm to sender
+            package(Action.RETURN, ["Message has been queued."], online_users[sender][0]) # confirm to sender
             return (False, "Message has been queued.")
     else:
-        package(Action.SEND, ["The receipient does not exist."], online_users[sender][0]) # confirm to sender
+        package(Action.RETURN, ["The receipient does not exist."], online_users[sender][0]) # confirm to sender
         return (False, "The receipient does not exist.")

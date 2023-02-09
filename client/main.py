@@ -77,8 +77,8 @@ def client_receive(client_socket):
         try:
             message = receive_unpkg_data(client_socket)
             if (message and len(message) > 2):
-                print(message[-1], flush = True) # TODO: ordering of the messages is not yet enforced
-            if (not respond_event.is_set()):
+                print(message[-1], flush = True)
+            if (not respond_event.is_set() and message[1] == Action.RETURN):
                 respond_event.set()
         except ConnectionResetError:
             gracefully_shutdown()
@@ -105,11 +105,13 @@ def client_main_loop(client_socket):
     # block until server acks join
     respond_event.wait()
 
-    while run_event.is_set():
-        respond_event.clear() # TODO: a message from another user is not differentiated from the server's response to client's action
+    print("Actions: list, send <user>, delete <user>, quit:", flush = True)
 
-        print("Actions: list, send <user> <message>, delete <user>, quit:")
-        action = input()
+    while run_event.is_set():
+        respond_event.clear()
+
+        sys.stdout.flush()
+        action = input("> ")
 
         action_list = action.split()
 
@@ -120,22 +122,27 @@ def client_main_loop(client_socket):
             package(Action.LIST, [""], client_socket)
         
         elif (action_list[0] == "send"):
-            if (len(action_list) < 2): # TODO: are we allowing spaces in username??
-                print("Must specify user to send to. Try again.", flush = True)
+            if (len(action_list) < 2):
+                print("Must specify valid user to send to. Try again.", flush = True)
                 continue
-            if (len(action_list) < 3):
-                print("Must specify message to send. Try again.", flush = True)
-                continue
-            package(Action.SEND, action_list[1:], client_socket)
+            print("Message to send to {user}?".format(user=' '.join(action_list[1:])))
+
+            while True:
+                message = input(">>> ")
+                if (not message):
+                    continue
+                break
+
+            package(Action.SEND, [' '.join(action_list[1:]), message], client_socket)
         
         elif (action_list[0] == "delete"):
-            if (len(action_list) < 2): # TODO: are we allowing spaces in username??
-                print("Must specify user to delete. Try again.", flush = True)
+            if (len(action_list) != 2):
+                print("Must specify valid user to delete. Try again.", flush = True)
                 continue
-            if (username == action_list[1]):
+            if (username == ' '.join(action_list[1:])):
                 print("Cannot delete self user.", flush = True)
                 continue
-            package(Action.DELETE, action_list[1:], client_socket)
+            package(Action.DELETE, [' '.join(action_list[1:])], client_socket)
         
         elif (action_list[0] == "quit"):
             run_event.clear()
