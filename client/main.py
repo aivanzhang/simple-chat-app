@@ -2,6 +2,7 @@ import sys
 import socket
 import threading
 import grpc
+import time
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
 from wire_protocol.protocol import *
@@ -15,7 +16,7 @@ respond_event = threading.Event()
 
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-use_grpc = True
+use_grpc = False
 
 def gracefully_shutdown():
     """
@@ -38,16 +39,6 @@ def gracefully_shutdown():
     # print("threads and socket successfully closed.")
     sys.exit(0)
 
-def generate_messages(command, username, message="HI"):
-    messages = [
-        main_pb2.UserRequest(
-            action=command,
-            username=username,
-            message=message
-        ),
-    ]
-    for msg in messages:
-        yield msg
 
 
 def main(host: str = "127.0.0.1", port: int = 3000) -> None:
@@ -61,6 +52,7 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
 
     print(f"Starting connection to {host}:{port}")
     if(use_grpc):
+        listen_thread = None
         with grpc.insecure_channel(f"{host}:{port}") as channel:
             stub = main_pb2_grpc.ChatterStub(channel)
             try:
@@ -69,11 +61,22 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
                     if command == "quit":
                         return
                     else:
-                        responses = stub.Chat(generate_messages(command, "ivan"))
-                        for response in responses:
-                            print("Received message %s" %
-                                (response.message))
+                        response = stub.Chat(
+                            main_pb2.UserRequest(action=command, username="ivan", message="HI")
+                        )
+                        print(response.message)
+                    if command == "join":
+                        def periodically_listen():
+                            print("Listening to pending messages...")
+                            while True:
+                                time.sleep(2)
+                                response = stub.ListenToPendingMessages(main_pb2.Empty())
+                                if(not response.isEmpty):
+                                    print(response.message)
+                        listen_thread = threading.Thread(target=(periodically_listen), args=())
+                        listen_thread.start()
             except KeyboardInterrupt:
+                listen_thread.join()
                 return
                 
     else:

@@ -25,29 +25,30 @@ if the user "bob" has socket `socket1` running on thread `thread1`, then
 users_connections = {}
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
-use_grpc = True
+use_grpc = False
 
 class Chatter(main_pb2_grpc.ChatterServicer):
     def __init__(self):
         self.username = None
 
-    """Provides methods that implement functionality of route guide server."""
-    def Chat(self, request_iterator, context):
-        for request in request_iterator:
-            action = request.action
-            if(action == Action.LIST):
-                payload = [None, action]
-                yield main_pb2.UserReply(message = handle_payload(payload)[1])
-            elif(action == Action.JOIN or action == Action.DELETE):
-                payload = [None, action, request.username]
-                yield main_pb2.UserReply(message = handle_payload(payload)[1])
-            if(action == Action.JOIN):
-                self.username = request.username
-                yield main_pb2.UserReply(message = "\n".join(return_pending_messages(request.username)))
-            if(action == Action.SEND):
-                message = handle_send_grpc(self.username, request.username, request.message)
-                yield main_pb2.UserReply(message = message)
-                
+    def ListenToPendingMessages(self, request, context):
+        pending_messages = return_pending_messages(self.username)
+        return main_pb2.PendingMsgsResponse(message = "\n".join(pending_messages), isEmpty = len(pending_messages) == 0)
+
+    def Chat(self, request, context):
+        action = request.action
+        if(action == Action.LIST):
+            payload = [None, action]
+            return main_pb2.UserReply(message = handle_payload(payload)[1])
+        elif(action == Action.DELETE):
+            payload = [None, action, request.username]
+            return main_pb2.UserReply(message = handle_payload(payload)[1])
+        elif(action == Action.SEND):
+            message = handle_send_grpc(self.username, request.username, request.message)
+            return main_pb2.UserReply(message = message)
+        elif(action == Action.JOIN):
+            self.username = request.username
+            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1])
 
 
 def gracefully_shutdown():
