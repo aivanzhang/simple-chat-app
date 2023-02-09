@@ -1,1 +1,1 @@
-python -m grpc_tools.protoc -I wire_protocol/protos --python_out=wire_protocol/grpc --pyi_out=wire_protocol/grpc --grpc_python_out=wire_protocol/grpc wire_protocol/protos/main.proto
+python -m grpc_tools.protoc -I grpc_stubs/protos --python_out=grpc_stubs --pyi_out=grpc_stubs --grpc_python_out=grpc_stubs grpc_stubs/protos/main.proto

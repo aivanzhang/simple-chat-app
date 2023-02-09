@@ -13,17 +13,17 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nmain.proto\"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t2b\n\x07Greeter\x12(\n\x08SayHello\x12\r.HelloRequest\x1a\x0b.HelloReply\"\x00\x12-\n\rSayHelloAgain\x12\r.HelloRequest\x1a\x0b.HelloReply\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nmain.proto\"0\n\x0bUserRequest\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\t\x12\x11\n\tparameter\x18\x02 \x01(\t\"\x1c\n\tUserReply\x12\x0f\n\x07message\x18\x01 \x01(\t21\n\x07\x43hatter\x12&\n\x04\x43hat\x12\x0c.UserRequest\x1a\n.UserReply\"\x00(\x01\x30\x01\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'main_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _HELLOREQUEST._serialized_start=14
-  _HELLOREQUEST._serialized_end=42
-  _HELLOREPLY._serialized_start=44
-  _HELLOREPLY._serialized_end=73
-  _GREETER._serialized_start=75
-  _GREETER._serialized_end=173
+  _USERREQUEST._serialized_start=14
+  _USERREQUEST._serialized_end=62
+  _USERREPLY._serialized_start=64
+  _USERREPLY._serialized_end=92
+  _CHATTER._serialized_start=94
+  _CHATTER._serialized_end=143
 # @@protoc_insertion_point(module_scope)

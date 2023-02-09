@@ -1,0 +1,17 @@
+syntax="proto3";
+// The chat service definition.
+service Chatter {
+  // Starts a chat with the server
+  rpc Chat(stream UserRequest) returns (stream UserReply) {}
+}
+
+// The request message containing the user's name.
+message UserRequest {
+  string action = 1;
+  string parameter = 2;
+}
+
+// The response message containing the greetings
+message UserReply {
+  string message = 1;
+}

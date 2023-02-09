@@ -1,9 +1,12 @@
 import sys
 import socket
 import threading
+import grpc
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
 from wire_protocol.protocol import *
+sys.path.append('../grpc_stubs')
+import main_pb2, main_pb2_grpc
 
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
@@ -12,7 +15,7 @@ respond_event = threading.Event()
 
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+use_grpc = True
 
 def gracefully_shutdown():
     """
@@ -35,6 +38,24 @@ def gracefully_shutdown():
     # print("threads and socket successfully closed.")
     sys.exit(0)
 
+def make_route_note(action, parameter):
+    return main_pb2.UserRequest(
+        action=action,
+        parameter=parameter
+    )
+
+def generate_messages():
+    messages = [
+        make_route_note("list", ""),
+        make_route_note("list", ""),
+        make_route_note("list", ""),
+        make_route_note("list", ""),
+        make_route_note("list", ""),
+    ]
+    for msg in messages:
+        print("Sending %s at %s" % (msg.action, msg.parameter))
+        yield msg
+
 
 def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
@@ -46,24 +67,32 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
 
     print(f"Starting connection to {host}:{port}")
-    client_socket.connect((host, port))
-    run_event.set()
-    respond_event.clear()
-    global receive_thread, send_thread
-    receive_thread = threading.Thread(
-        target=client_receive, args=(client_socket,)
-    )
-    send_thread = threading.Thread(
-        target=client_main_loop, args=(client_socket,)
-    )
-    receive_thread.start()
-    send_thread.start()
-    try:
-        while True and run_event.is_set():
-            pass
-    except KeyboardInterrupt:
+    if(use_grpc):
+        with grpc.insecure_channel(f"{host}:{port}") as channel:
+            stub = main_pb2_grpc.ChatterStub(channel)
+            responses = stub.Chat(generate_messages())
+            for response in responses:
+                print("Received message %s" %
+                    (response.message))
+    else:
+        client_socket.connect((host, port))
+        run_event.set()
+        respond_event.clear()
+        global receive_thread, send_thread
+        receive_thread = threading.Thread(
+            target=client_receive, args=(client_socket,)
+        )
+        send_thread = threading.Thread(
+            target=client_main_loop, args=(client_socket,)
+        )
+        receive_thread.start()
+        send_thread.start()
+        try:
+            while True and run_event.is_set():
+                pass
+        except KeyboardInterrupt:
+            gracefully_shutdown()
         gracefully_shutdown()
-    gracefully_shutdown()
 
 
 def client_receive(client_socket):
