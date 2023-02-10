@@ -3,9 +3,14 @@ import threading
 import sys
 from payload import *
 from db_utils import save_db_to_disk
+from concurrent import futures
+
+import grpc
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
-from wire_protocol.protocol import *
+from wire_protocol.protocol import * 
+sys.path.append('../grpc_stubs')
+import main_pb2, main_pb2_grpc
 
 """
 `users_connections` is a global dictionary that stores the user connections data.
@@ -20,6 +25,30 @@ if the user "bob" has socket `socket1` running on thread `thread1`, then
 users_connections = {}
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
+use_grpc = False
+
+class Chatter(main_pb2_grpc.ChatterServicer):
+    def __init__(self):
+        self.username = None
+
+    def ListenToPendingMessages(self, request, context):
+        pending_messages = return_pending_messages(self.username)
+        return main_pb2.PendingMsgsResponse(message = "\n".join(pending_messages), isEmpty = len(pending_messages) == 0)
+
+    def Chat(self, request, context):
+        action = request.action
+        if(action == Action.LIST):
+            payload = [None, action]
+            return main_pb2.UserReply(message = handle_payload(payload)[1])
+        elif(action == Action.DELETE):
+            payload = [None, action, request.username]
+            return main_pb2.UserReply(message = handle_payload(payload)[1])
+        elif(action == Action.SEND):
+            message = handle_send_grpc(self.username, request.username, request.message)
+            return main_pb2.UserReply(message = message)
+        elif(action == Action.JOIN):
+            self.username = request.username
+            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1])
 
 
 def gracefully_shutdown():
@@ -65,7 +94,6 @@ def gracefully_quit(username):
     print(f"threads and sockets successfully closed for {username}.")
     sys.exit(0)
 
-
 def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
     Initializes the server.
@@ -74,13 +102,25 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
     init_db()
     init_users()
-    global sock
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((host, port))
-    sock.listen()
-    run_event.set()
-    print(f"Now listening on {host}:{port}")
-    listen_for_connections(sock)
+    if (use_grpc):
+        try:
+            server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+            main_pb2_grpc.add_ChatterServicer_to_server(Chatter(), server)
+            server.add_insecure_port(f"{host}:{port}")
+            server.start()
+            print(f"Now listening on {host}:{port}")
+            server.wait_for_termination()
+        except KeyboardInterrupt:
+            server.stop(0)
+        return
+    else:
+        global sock
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((host, port))
+        sock.listen()
+        run_event.set()
+        print(f"Now listening on {host}:{port}")
+        listen_for_connections(sock)
 
 
 def handle_client(client_socket):

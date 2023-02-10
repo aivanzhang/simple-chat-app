@@ -1,9 +1,13 @@
 import sys
 import socket
 import threading
+import grpc
+import time
 # Add the parent wire_protocol directory to the path so that its methods can be imported
 sys.path.append('..')
 from wire_protocol.protocol import *
+sys.path.append('../grpc_stubs')
+import main_pb2, main_pb2_grpc
 
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
@@ -12,7 +16,7 @@ respond_event = threading.Event()
 
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+use_grpc = False
 
 def gracefully_shutdown():
     """
@@ -36,6 +40,7 @@ def gracefully_shutdown():
     sys.exit(0)
 
 
+
 def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
     Initializes and connects to the server.
@@ -46,24 +51,53 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
 
     print(f"Starting connection to {host}:{port}")
-    client_socket.connect((host, port))
-    run_event.set()
-    respond_event.clear()
-    global receive_thread, send_thread
-    receive_thread = threading.Thread(
-        target=client_receive, args=(client_socket,)
-    )
-    send_thread = threading.Thread(
-        target=client_main_loop, args=(client_socket,)
-    )
-    receive_thread.start()
-    send_thread.start()
-    try:
-        while True and run_event.is_set():
-            pass
-    except KeyboardInterrupt:
+    if(use_grpc):
+        listen_thread = None
+        with grpc.insecure_channel(f"{host}:{port}") as channel:
+            stub = main_pb2_grpc.ChatterStub(channel)
+            try:
+                while True:
+                    command = input("Command: ")
+                    if command == "quit":
+                        return
+                    else:
+                        response = stub.Chat(
+                            main_pb2.UserRequest(action=command, username="ivan", message="HI")
+                        )
+                        print(response.message)
+                    if command == "join":
+                        def periodically_listen():
+                            print("Listening to pending messages...")
+                            while True:
+                                time.sleep(2)
+                                response = stub.ListenToPendingMessages(main_pb2.Empty())
+                                if(not response.isEmpty):
+                                    print(response.message)
+                        listen_thread = threading.Thread(target=(periodically_listen), args=())
+                        listen_thread.start()
+            except KeyboardInterrupt:
+                listen_thread.join()
+                return
+                
+    else:
+        client_socket.connect((host, port))
+        run_event.set()
+        respond_event.clear()
+        global receive_thread, send_thread
+        receive_thread = threading.Thread(
+            target=client_receive, args=(client_socket,)
+        )
+        send_thread = threading.Thread(
+            target=client_main_loop, args=(client_socket,)
+        )
+        receive_thread.start()
+        send_thread.start()
+        try:
+            while True and run_event.is_set():
+                pass
+        except KeyboardInterrupt:
+            gracefully_shutdown()
         gracefully_shutdown()
-    gracefully_shutdown()
 
 
 def client_receive(client_socket):
