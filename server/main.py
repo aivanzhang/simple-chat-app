@@ -25,8 +25,9 @@ if the user "bob" has socket `socket1` running on thread `thread1`, then
 users_connections = {}
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
-use_grpc = False
+use_grpc = True # TODO: turn this into command line argument
 
+# gRPC implementation
 class Chatter(main_pb2_grpc.ChatterServicer):
     def __init__(self):
         self.username = None
@@ -42,13 +43,13 @@ class Chatter(main_pb2_grpc.ChatterServicer):
             return main_pb2.UserReply(message = handle_payload(payload)[1])
         elif(action == Action.DELETE):
             payload = [None, action, request.username]
-            return main_pb2.UserReply(message = handle_payload(payload)[1])
+            return main_pb2.UserReply(message = handle_payload(payload)[1]) # TODO: need to cover case where deleting user who is logged in (can send quit message when leaving)
         elif(action == Action.SEND):
             message = handle_send_grpc(self.username, request.username, request.message)
             return main_pb2.UserReply(message = message)
         elif(action == Action.JOIN):
             self.username = request.username
-            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1])
+            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1]) # TODO: need to cover case where trying to login when already logged in
 
 
 def gracefully_shutdown():
