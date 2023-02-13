@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nmain.proto\"@\n\x0bUserRequest\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"\x1c\n\tUserReply\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x07\n\x05\x45mpty\"7\n\x13PendingMsgsResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07isEmpty\x18\x02 \x01(\x08\x32h\n\x07\x43hatter\x12\"\n\x04\x43hat\x12\x0c.UserRequest\x1a\n.UserReply\"\x00\x12\x39\n\x17ListenToPendingMessages\x12\x06.Empty\x1a\x14.PendingMsgsResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nmain.proto\"@\n\x0bUserRequest\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"\x1c\n\tUserReply\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x07\n\x05\x45mpty\"\x1b\n\x08Messages\x12\x0f\n\x07message\x18\x01 \x01(\t2R\n\x07\x43hatter\x12&\n\x04\x43hat\x12\x0c.UserRequest\x1a\n.UserReply\"\x00(\x01\x30\x01\x12\x1f\n\x06Listen\x12\x06.Empty\x1a\t.Messages\"\x00\x30\x01\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'main_pb2', globals())
@@ -26,8 +26,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _USERREPLY._serialized_end=108
   _EMPTY._serialized_start=110
   _EMPTY._serialized_end=117
-  _PENDINGMSGSRESPONSE._serialized_start=119
-  _PENDINGMSGSRESPONSE._serialized_end=174
-  _CHATTER._serialized_start=176
-  _CHATTER._serialized_end=280
+  _MESSAGES._serialized_start=119
+  _MESSAGES._serialized_end=146
+  _CHATTER._serialized_start=148
+  _CHATTER._serialized_end=230
 # @@protoc_insertion_point(module_scope)

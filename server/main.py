@@ -32,24 +32,40 @@ class Chatter(main_pb2_grpc.ChatterServicer):
     def __init__(self):
         self.username = None
 
-    def ListenToPendingMessages(self, request, context):
-        pending_messages = return_pending_messages(self.username)
-        return main_pb2.PendingMsgsResponse(message = "\n".join(pending_messages), isEmpty = len(pending_messages) == 0)
+    def Chat(self, request_iterator, context):
+        for request in request_iterator:
+            action = request.action
 
-    def Chat(self, request, context):
-        action = request.action
-        if(action == Action.LIST):
-            payload = [None, action]
-            return main_pb2.UserReply(message = handle_payload(payload)[1])
-        elif(action == Action.DELETE):
-            payload = [None, action, request.username]
-            return main_pb2.UserReply(message = handle_payload(payload)[1]) # TODO: need to cover case where deleting user who is logged in (can send quit message when leaving)
-        elif(action == Action.SEND):
-            message = handle_send_grpc(self.username, request.username, request.message)
-            return main_pb2.UserReply(message = message)
-        elif(action == Action.JOIN):
-            self.username = request.username
-            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1]) # TODO: need to cover case where trying to login when already logged in
+            if (action == Action.JOIN):
+                if (username in users_connections.keys()): # already logged in, refuse client
+                    yield main_pb2.UserReply(message = "Already logged in elsewhere.")
+                    break
+
+                self.username = request.username
+                yield main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1])
+
+            elif (action == Action.LIST):
+                payload = [None, action]
+                yield main_pb2.UserReply(message = handle_payload(payload)[1])
+
+            elif (action == Action.SEND):
+                yield main_pb2.UserReply(message = handle_send_grpc(username, request.username, request.message))
+
+            elif (action == Action.DELETE):
+                if (request.username in users_connections.keys()):
+                    yield main_pb2.UserReply(message = "Cannot delete logged in user.")
+                else:
+                    payload = [None, action, request.username]
+                    yield main_pb2.UserReply(message = handle_payload(payload)[1])
+
+            elif (action == Action.QUIT): # TODO: client must send quit message
+                del users_connections[username]
+                break
+
+    def Listen(self, request, context):
+        pending_messages = return_pending_messages(self.username)
+        if (pending_messages):
+            yield main_pb2.Messages(message = "\n".join(pending_messages))
 
 
 def gracefully_shutdown():

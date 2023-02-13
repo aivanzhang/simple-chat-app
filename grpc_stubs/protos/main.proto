@@ -1,27 +1,27 @@
 syntax="proto3";
 // The chat service definition.
 service Chatter {
-  // Starts a chat with the server
-  rpc Chat(UserRequest) returns (UserReply) {}
-  // Starts a listener on the server to receive messages
-  rpc ListenToPendingMessages(Empty) returns (PendingMsgsResponse) {}
+  // Starts a chat with the server, client <> server
+  rpc Chat(stream UserRequest) returns (stream UserReply) {}
+
+  // Client's messages from other clients, client <> client
+  rpc Listen(Empty) returns (stream Messages) {}
 }
 
-// The request message containing the user's name.
+// The client request messages
 message UserRequest {
   string action = 1;
   string username = 2;
   string message = 3;
 }
 
-// The response message containing the greetings
+// The server response messages
 message UserReply {
   string message = 1;
 }
 
 message Empty {}
 
-message PendingMsgsResponse {
+message Messages {
   string message = 1;
-  bool isEmpty = 2;
 }

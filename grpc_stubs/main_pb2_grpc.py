@@ -15,15 +15,15 @@ class ChatterStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.Chat = channel.unary_unary(
+        self.Chat = channel.stream_stream(
                 '/Chatter/Chat',
                 request_serializer=main__pb2.UserRequest.SerializeToString,
                 response_deserializer=main__pb2.UserReply.FromString,
                 )
-        self.ListenToPendingMessages = channel.unary_unary(
-                '/Chatter/ListenToPendingMessages',
+        self.Listen = channel.unary_stream(
+                '/Chatter/Listen',
                 request_serializer=main__pb2.Empty.SerializeToString,
-                response_deserializer=main__pb2.PendingMsgsResponse.FromString,
+                response_deserializer=main__pb2.Messages.FromString,
                 )
 
 
@@ -31,15 +31,15 @@ class ChatterServicer(object):
     """The chat service definition.
     """
 
-    def Chat(self, request, context):
-        """Starts a chat with the server
+    def Chat(self, request_iterator, context):
+        """Starts a chat with the server, client <> server
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ListenToPendingMessages(self, request, context):
-        """Starts a listener on the server to receive messages
+    def Listen(self, request, context):
+        """Client's messages from other clients, client <> client
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -48,15 +48,15 @@ class ChatterServicer(object):
 
 def add_ChatterServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Chat': grpc.unary_unary_rpc_method_handler(
+            'Chat': grpc.stream_stream_rpc_method_handler(
                     servicer.Chat,
                     request_deserializer=main__pb2.UserRequest.FromString,
                     response_serializer=main__pb2.UserReply.SerializeToString,
             ),
-            'ListenToPendingMessages': grpc.unary_unary_rpc_method_handler(
-                    servicer.ListenToPendingMessages,
+            'Listen': grpc.unary_stream_rpc_method_handler(
+                    servicer.Listen,
                     request_deserializer=main__pb2.Empty.FromString,
-                    response_serializer=main__pb2.PendingMsgsResponse.SerializeToString,
+                    response_serializer=main__pb2.Messages.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +70,7 @@ class Chatter(object):
     """
 
     @staticmethod
-    def Chat(request,
+    def Chat(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -80,14 +80,14 @@ class Chatter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Chatter/Chat',
+        return grpc.experimental.stream_stream(request_iterator, target, '/Chatter/Chat',
             main__pb2.UserRequest.SerializeToString,
             main__pb2.UserReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def ListenToPendingMessages(request,
+    def Listen(request,
             target,
             options=(),
             channel_credentials=None,
@@ -97,8 +97,8 @@ class Chatter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Chatter/ListenToPendingMessages',
+        return grpc.experimental.unary_stream(request, target, '/Chatter/Listen',
             main__pb2.Empty.SerializeToString,
-            main__pb2.PendingMsgsResponse.FromString,
+            main__pb2.Messages.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

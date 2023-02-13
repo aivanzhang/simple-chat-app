@@ -8,13 +8,11 @@ class Empty(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
-class PendingMsgsResponse(_message.Message):
-    __slots__ = ["isEmpty", "message"]
-    ISEMPTY_FIELD_NUMBER: _ClassVar[int]
+class Messages(_message.Message):
+    __slots__ = ["message"]
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
-    isEmpty: bool
     message: str
-    def __init__(self, message: _Optional[str] = ..., isEmpty: bool = ...) -> None: ...
+    def __init__(self, message: _Optional[str] = ...) -> None: ...
 
 class UserReply(_message.Message):
     __slots__ = ["message"]
