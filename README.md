@@ -18,6 +18,7 @@ gRPC version: `python client/main.py --use_grpc`
 
 Mismatch in gRPC version between server and client will cause undefined behavior.
 
+#### Client Usage
 The UI will ask for your username. You will not be able to log into a username if that username is already logged in elsewhere.
 
 After entering your username, pending messages will be displayed.
