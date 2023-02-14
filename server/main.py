@@ -25,31 +25,44 @@ if the user "bob" has socket `socket1` running on thread `thread1`, then
 users_connections = {}
 # Event that is set when threads are running and cleared when you want threads to stop
 run_event = threading.Event()
-use_grpc = True # TODO: turn this into command line argument
 
 # gRPC implementation
 class Chatter(main_pb2_grpc.ChatterServicer):
     def __init__(self):
-        self.username = None
+        pass
 
     def ListenToPendingMessages(self, request, context):
-        pending_messages = return_pending_messages(self.username)
+        pending_messages = return_pending_messages(request.username)
         return main_pb2.PendingMsgsResponse(message = "\n".join(pending_messages), isEmpty = len(pending_messages) == 0)
 
     def Chat(self, request, context):
         action = request.action
+        
         if(action == Action.LIST):
             payload = [None, action]
             return main_pb2.UserReply(message = handle_payload(payload)[1])
+        
         elif(action == Action.DELETE):
+            if (request.username in users_connections.keys()):
+                return main_pb2.UserReply(message = "Cannot delete logged in user.")
+
             payload = [None, action, request.username]
-            return main_pb2.UserReply(message = handle_payload(payload)[1]) # TODO: need to cover case where deleting user who is logged in (can send quit message when leaving)
+            return main_pb2.UserReply(message = handle_payload(payload)[1])
+        
         elif(action == Action.SEND):
-            message = handle_send_grpc(self.username, request.username, request.message)
+            message = handle_send_grpc(request.username, request.recipient, request.message)
             return main_pb2.UserReply(message = message)
+        
         elif(action == Action.JOIN):
-            self.username = request.username
-            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1]) # TODO: need to cover case where trying to login when already logged in
+            if (request.username in users_connections.keys()): # already logged in, refuse client
+                return main_pb2.UserReply(message = "Already logged in elsewhere.")
+
+            users_connections[request.username] = None
+            return main_pb2.UserReply(message = handle_payload([None, "join", request.username])[1])
+        
+        elif(action == Action.QUIT):
+            del users_connections[request.username]
+            return main_pb2.UserReply(message = "")
 
 
 def gracefully_shutdown():
@@ -101,8 +114,15 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     @Parameter: None.
     @Returns: None.
     """
+    # undefined behavior if client and server mismatch on use_grpc
+    global use_grpc
+    use_grpc = False
+    if ('--use_grpc' in sys.argv):
+        use_grpc = True
+
     init_db()
     init_users()
+
     if (use_grpc):
         try:
             server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -113,6 +133,8 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
             server.wait_for_termination()
         except KeyboardInterrupt:
             server.stop(0)
+            print("saving data to disk.")
+            save_db_to_disk()
         return
     else:
         global sock

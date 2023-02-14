@@ -16,7 +16,6 @@ respond_event = threading.Event()
 
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-use_grpc = True # TODO: turn this into command line argument
 
 def gracefully_shutdown():
     """
@@ -49,6 +48,11 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     2. port: The port to connect to.
     @Returns: None.
     """
+    # undefined behavior if client and server mismatch on use_grpc
+    global use_grpc
+    use_grpc = False
+    if ('--use_grpc' in sys.argv):
+        use_grpc = True
 
     # gRPC implementation
     print(f"Starting connection to {host}:{port}")
@@ -65,16 +69,20 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
                 break
 
             response = stub.Chat(
-                main_pb2.UserRequest(action="join", username=username, message="")
+                main_pb2.UserRequest(action="join", username=username, recipient="", message="")
             )
             print(response.message, flush = True)
+
+            # user logged in elsewhere, end client
+            if ('Already logged in' in response.message):
+                return
 
             def periodically_listen():
                 print("Listening to pending messages...")
                 try:
                     while True:
                         time.sleep(2)
-                        response = stub.ListenToPendingMessages(main_pb2.Empty())
+                        response = stub.ListenToPendingMessages(main_pb2.UserRequest(action='', username=username, recipient='', message=""))
                         if(not response.isEmpty):
                             print(response.message)
                 except ValueError:
@@ -99,12 +107,9 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
                     
                     elif (action_list[0] == "list"):
                         response = stub.Chat(
-                            main_pb2.UserRequest(action=action_list[0], username=username, message="")
+                            main_pb2.UserRequest(action=action_list[0], username=username, recipient='', message="")
                         )
 
-                    # TODO: problem when two users logged in at same time
-                    # --> only the most recently logged in user receives any messages, and the sender
-                    # --> is always the most recently logged in username
                     elif (action_list[0] == "send"):
                         if (len(action_list) < 2):
                             print("Must specify valid user to send to. Try again.", flush = True)
@@ -118,7 +123,7 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
                             break
 
                         response = stub.Chat(
-                            main_pb2.UserRequest(action=action_list[0], username=' '.join(action_list[1:]), message=message)
+                            main_pb2.UserRequest(action=action_list[0], username=username, recipient=' '.join(action_list[1:]), message=message)
                         )
 
                     elif (action_list[0] == "delete"):
@@ -129,23 +134,30 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
                             print("Cannot delete self user.", flush = True)
                             continue
                         response = stub.Chat(
-                            main_pb2.UserRequest(action=action_list[0], username=' '.join(action_list[1:]), message="")
+                            main_pb2.UserRequest(action=action_list[0], username=' '.join(action_list[1:]), recipient='', message="")
                         )
 
                     elif (action_list[0] == "quit"):
+                        response = stub.Chat(
+                            main_pb2.UserRequest(action=action_list[0], username=username, recipient='', message="")
+                        )
                         return
 
                     else:
                         print("Unrecognized action.", flush = True)
                         continue
 
-                    print(response.message) # TODO: does this block until the server response?
+                    print(response.message, flush = True)
 
             except KeyboardInterrupt:
+                # send quit to server
+                response = stub.Chat(
+                    main_pb2.UserRequest(action="quit", username=username, recipient='', message="")
+                )
                 listen_thread.join()
                 return
 
-            listen_thread.join() # TODO: does this force the thread to stop? do we need a thread event for this?
+            listen_thread.join()
             return
     
     # Wire protocol implementation            

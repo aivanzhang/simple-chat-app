@@ -4,22 +4,21 @@ service Chatter {
   // Starts a chat with the server
   rpc Chat(UserRequest) returns (UserReply) {}
   // Starts a listener on the server to receive messages
-  rpc ListenToPendingMessages(Empty) returns (PendingMsgsResponse) {}
+  rpc ListenToPendingMessages(UserRequest) returns (PendingMsgsResponse) {}
 }
 
 // The request message containing the user's name.
 message UserRequest {
   string action = 1;
   string username = 2;
-  string message = 3;
+  string recipient = 3;
+  string message = 4;
 }
 
 // The response message containing the greetings
 message UserReply {
   string message = 1;
 }
-
-message Empty {}
 
 message PendingMsgsResponse {
   string message = 1;

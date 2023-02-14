@@ -22,7 +22,7 @@ class ChatterStub(object):
                 )
         self.ListenToPendingMessages = channel.unary_unary(
                 '/Chatter/ListenToPendingMessages',
-                request_serializer=main__pb2.Empty.SerializeToString,
+                request_serializer=main__pb2.UserRequest.SerializeToString,
                 response_deserializer=main__pb2.PendingMsgsResponse.FromString,
                 )
 
@@ -55,7 +55,7 @@ def add_ChatterServicer_to_server(servicer, server):
             ),
             'ListenToPendingMessages': grpc.unary_unary_rpc_method_handler(
                     servicer.ListenToPendingMessages,
-                    request_deserializer=main__pb2.Empty.FromString,
+                    request_deserializer=main__pb2.UserRequest.FromString,
                     response_serializer=main__pb2.PendingMsgsResponse.SerializeToString,
             ),
     }
@@ -98,7 +98,7 @@ class Chatter(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Chatter/ListenToPendingMessages',
-            main__pb2.Empty.SerializeToString,
+            main__pb2.UserRequest.SerializeToString,
             main__pb2.PendingMsgsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
