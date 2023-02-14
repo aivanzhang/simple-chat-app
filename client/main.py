@@ -16,6 +16,8 @@ respond_event = threading.Event()
 
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+use_grpc = False
+aws_host = "ec2-3-86-48-193.compute-1.amazonaws.com"
 
 def gracefully_shutdown():
     """
@@ -39,7 +41,7 @@ def gracefully_shutdown():
 
 
 
-def main(host: str = "127.0.0.1", port: int = 3000) -> None:
+def main(host: str = aws_host, port: int = 3000) -> None:
     """
     Initializes and connects to the server.
     @Parameter:
