@@ -41,7 +41,7 @@ def gracefully_shutdown():
 
 
 
-def main(host: str = aws_host, port: int = 3000) -> None:
+def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     """
     Initializes and connects to the server.
     @Parameter:
