@@ -1,13 +1,86 @@
 Engineering Notebook
 
-Part 1:
-Keep a notebook for what decisions you made, and why you made them the way you did, and any interesting observations that come up along the way.
+Deployment:
+	We deploy using cloud <TODO>
 
-Part 2:
-Add to your notebook comparisons over the complexity of the code, any performance differences, and the size of the buffers being sent back and forth between the client and the server.
+Part 1: Wire Protocol Version
+Server:
+	The server is built using three files: main.py, payload.py, db_utils.py.
+	payload.py determines what the server's response will be given the action, username and message.
+	db_utils.py specifies the database storage of users and pending messages for each user.
+		If the server closes, the pending messages for each user are saved as a csv, so when the server
+		is restarted, the state is preserved.
+	main.py handles the sockets and data transfer to and from the clients.
+		The connection scheme is simple: main opens the listening/accepting socket and spawns a new thread
+		for each client socket that is created.
 
-Jason:
-Part 1
-- UI is command line and written in python
-- When client opens connection to server, it asks for username. If unique, create the account. If not, deliver any pending messages
-- User actions: list, send, delete, quit
+		The client socket uses the payload to determine which response it will give and simply routes 
+		messages back and forth. In cases where the logged in users need to be accessed (client tries to 
+		log into an account which is already logged in, client tries to delete account which is logged
+		in), the server must handle payload processing, as the info about active users is stored in 
+		main.py and not in payload.py.
+
+Client:
+	The client runs main.py, connecting to the server's socket, then spawns two threads, a receiving 
+	thread which listens to server messages and a main loop thread which serves as the client UI.
+	
+	The receiving thread listens for messages from the server and prints it to the UI. There are two 
+	types of messages received: server responses to client actions and messages from other clients.
+	They are distinguished in that server responses are labeled Action.RETURN. The distinction is
+	important for enforcing order in the client UI: we want to block the client from entering new 
+	requests until the server has responded to the previous request, but messages from other clients
+	can come at any time.
+
+	The main loop thread is the client UI. It asks the client for a username and then consumes all 
+	client requests. It uses the wire protocol to send messages to the server.
+
+	We considered the case where a client tries to log into an account that is already logged in
+	elsewhere. The client is refused and shut down in this case, since simultaneous login would 
+	create issues with which socket is releated to which client.
+
+	We also considered the case where a client tries to delete the account of a client who is logged
+	in elsewhere. The request is refused because it would be rude to delete someone else's account
+	when they're currently logged into it.
+
+Wire Protocol:
+	The wire protocol lists actions that can specify the message types between the client and server,
+	and offers a simple interface of package() and receive_unpkg_data() for the client and server
+	to use to communicate to each other.
+
+	The protocol's package contents include the action, a list of strings which are read as the
+	parameters for the action, including sender name, recipient, and message, and finally the total
+	length of the package. We bundle this up into strings for simplicity. Sending the package into
+	the socket is an all-at-once operation, but receiving the package requires some buffer size. To 
+	allow for arbitrary-length messages, we include the total length of the package at the start
+	and continue consuming the receipt until the total package has been received.
+
+	A special separator of "~$#" is used to determine the separations between package length,
+	package action, and contents, so as to avoid confusion with spaces and ease parsing.
+
+Part 2: gRPC Version
+The code in the gRPC version is about equal in complexity to the Part 1 version.
+
+Originally, we attempted to use state within the server class to determine user connection. However, we 
+found that the user connection is not preserved across calls, and so we instead decided to include the
+sender username in requests from the client. This means that the buffer sizes between the client and 
+server are slightly larger, though in our small-scale tests we don't find any performance differences.
+
+Server:
+	The server code is mostly the same as Part 1. We can re-use all payload and db_util functions for 
+	handling the contents of the messages and the database of users. Thus client <> server interactions
+	are about equivalent.
+
+	Client <> client interactions, on the other hand, are handled here by adding all messages into the 
+	pending queue and using another rpc for sending all pending messages whenever the client asks. 
+	Using two different rpc's for this scenario is helpful for distinguishing server responses from 
+	client messages.
+
+Client:
+	As stated above, the client <> server is equivalent.
+
+	Client <> client communication is handled by the client polling for pending messages every 2 seconds. 
+	Here, we decided to use a simple rpc instead of a response-streaming rpc for simplicity and to keep
+	all of the messages idempotent. The performance of receiving messages is therefore impacted by the 
+	polling rate, though we considr a 2-second difference in message receipt at worst for this simple chat
+	application to be a negligible performance detraction.
+

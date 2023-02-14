@@ -19,11 +19,10 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def gracefully_shutdown():
     """
-    Gracefully shuts down the client.
+    Gracefully shuts down the client for non-grpc version.
     @Parameter: None.
     @Returns: None.
     """
-    # print("attempting to close socket and threads.")
     print("Shutting down.") # UI message
     run_event.clear()
     respond_event.set()

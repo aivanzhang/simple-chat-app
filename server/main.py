@@ -31,10 +31,12 @@ class Chatter(main_pb2_grpc.ChatterServicer):
     def __init__(self):
         pass
 
+    # client <> client communication
     def ListenToPendingMessages(self, request, context):
         pending_messages = return_pending_messages(request.username)
         return main_pb2.PendingMsgsResponse(message = "\n".join(pending_messages), isEmpty = len(pending_messages) == 0)
 
+    # client <> server communication
     def Chat(self, request, context):
         action = request.action
         
@@ -147,6 +149,12 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
 
 
 def handle_client(client_socket):
+    """
+    Handles client requests in non-grpc version.
+    @Parameter:
+    1. client_socket: The socket which connects to the client.
+    @Returns: None.
+    """
     username = None
     while run_event.is_set():
         message = receive_unpkg_data(client_socket)

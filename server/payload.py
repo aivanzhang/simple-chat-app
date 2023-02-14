@@ -42,12 +42,10 @@ def handle_send(payload, sender, online_users):
     """
     Handles the send action. Sends message from sender to receiver. Online users is a dictionary of online users 
     (see global user_connections in server/main.py).
-    @Parameter:
-    1. sender: The sender of the message.
-    2. payload: The payload to handle. See wire_protocol/protocol.py Action class for more details on the payload.
-    3. online_users: A dictionary of online users.
-    @Returns: A tuple with the following values (True, "Message sent successfully.") if the user is online otherwise
-    (False, "Message has been queued."). Note that this method sends the message to the receiver socket if they are online.
+    
+    If recipient online, sends message successfully.
+    If recipient not online, queues message.
+    If recipient doesn't exist, sends error message.
     """
     payload = payload[2:]
     receiver = payload[0]
@@ -67,6 +65,12 @@ def handle_send(payload, sender, online_users):
         return (False, "The receipient does not exist.")
     
 def handle_send_grpc(sender, receiver, message):
+    """
+    Handles the send action for gRPC implementation.
+    
+    If recipient exists, sends or queues message.
+    If recipient doesn't exist, sends error message.
+    """
     message = f"{sender} says: {message}"
     if(user_exists(receiver)):
         add_pending_message(receiver, message)
