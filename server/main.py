@@ -121,6 +121,8 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     use_grpc = False
     if ('--use_grpc' in sys.argv):
         use_grpc = True
+    if ('--use_aws' in sys.argv):
+        host = "0.0.0.0"
 
     init_db()
     init_users()

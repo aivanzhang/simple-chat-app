@@ -17,7 +17,7 @@ respond_event = threading.Event()
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 use_grpc = False
-aws_host = "ec2-3-86-48-193.compute-1.amazonaws.com"
+aws_host = "ec2-34-207-224-131.compute-1.amazonaws.com"
 
 def gracefully_shutdown():
     """
@@ -54,6 +54,8 @@ def main(host: str = "127.0.0.1", port: int = 3000) -> None:
     use_grpc = False
     if ('--use_grpc' in sys.argv):
         use_grpc = True
+    if ('--use_aws' in sys.argv):
+        host = aws_host
 
     # gRPC implementation
     print(f"Starting connection to {host}:{port}")
