@@ -17,7 +17,7 @@ respond_event = threading.Event()
 # Client socket that connects to the server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 use_grpc = False
-aws_host = "ec2-34-207-224-131.compute-1.amazonaws.com"
+aws_host = "ec2-54-227-60-101.compute-1.amazonaws.com"
 
 def gracefully_shutdown():
     """
