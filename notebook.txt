@@ -84,3 +84,10 @@ Client:
 	polling rate, though we considr a 2-second difference in message receipt at worst for this simple chat
 	application to be a negligible performance detraction.
 
+
+Code testing:
+    Due to the simplicity of the application, we choose to document tests as a list of instructions for
+    input and output, listed in tests.md. The list covers all possible user actions.
+
+    We considered automating the code tests, but decided that the application was simple enough that these
+    tests would suffice.
