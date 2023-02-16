@@ -26,7 +26,9 @@ Now, login with a different unique username. Delete your first username and use 
 
 Attempt to send a message to the deleted username. You should receive an error message.
 
-Quit.
+Attempt to use a bogus user command. It should be unrecognized.
+
+Attempt to quit using a keyboard interrupt. Log back in and ensure behavior is as expected. Quit.
 
 ## Two Users
 
@@ -48,6 +50,8 @@ Repeat the above step logging out of A and sending from B.
 
 With both A and B logged in, attempt to delete A from B and B from A. You should not be able to delete the accounts as they are logged in. Use `list` to ensure the accounts have not been deleted.
 
+Quit from A using a keyboard interrupt. B `list` should still show A exists. Send messages from B to A and log back into A. Ensure that the pending messages are received.
+
 ## Three Users
 
 For these tests, use three clients **A**, **B**, and **C**.
@@ -55,3 +59,5 @@ For these tests, use three clients **A**, **B**, and **C**.
 From A, send messages to B and ensure that nothing happens to C. Do this while B is logged in and while B is logged out.
 
 From A and C, both send messages to B. Do this while B is logged in and while B is logged out.
+
+Logout of A. From B, delete A. Check from both B and C that `list` shows A as deleted.
