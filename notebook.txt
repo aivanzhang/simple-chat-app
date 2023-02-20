@@ -1,7 +1,13 @@
 Engineering Notebook
 
 Deployment:
-	We deploy using cloud <TODO>
+
+These instructions are AWS-specific but similar requirements will apply to other cloud providers.
+	We deploy using an AWS EC2 t2.mirco instance. This instance is inside a VPC that is connected to the 
+	public Internet via an internet gateway. We also allow inbound traffic on port 3000. To set up the 
+	app on the server, we need to first install all the requirements in `requirements.txt`. We also run
+	the `server/main.py` file to start the server.
+	
 
 Part 1: Wire Protocol Version
 Server:
